@@ -15,7 +15,6 @@ WATCHLIST = [
     "JPM","V","MA","PYPL","WMT","COST","KO","PEP","XOM","CVX"
 ]
 
-# Signal thresholds (normalized 0-100 scale, see score())
 BUY_SCORE = 80
 WATCH_SCORE = 60
 HIGH_NEAR = 0.02
@@ -23,8 +22,7 @@ RSI_LOW = 35
 RSI_HIGH = 65
 
 RETRIES = 3
-RETRY_DELAY = 2  # seconds, doubles each retry
-
+RETRY_DELAY = 2
 
 def send_telegram(text):
     if not TOKEN or not CHAT_ID:
@@ -38,7 +36,6 @@ def send_telegram(text):
     except Exception as e:
         print("Telegram error:", e)
 
-
 def load_state():
     try:
         with open(STATE_FILE, "r", encoding="utf-8") as f:
@@ -46,19 +43,21 @@ def load_state():
     except Exception:
         return {}
 
-
 def save_state(state):
-    with open(STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, indent=2, ensure_ascii=False)
+    # กรองค่า NaN หรือ None ก่อนเซฟลง JSON
+    clean_state = {}
+    for k, v in state.items():
+        clean_state[k] = v.copy()
+        price = clean_state[k].get("last_price")
+        if price is None or pd.isna(price) or np.isnan(price):
+            clean_state[k]["last_price"] = None
+        else:
+            clean_state[k]["last_price"] = float(price)
 
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(clean_state, f, indent=2, ensure_ascii=False)
 
 def rsi(close, period=14):
-    """
-    Wilder-style RSI via EWM.
-    FIX: when avg_loss == 0 (no down days in the lookback window), RS is
-    infinite and RSI should be 100, not NaN. Previously the code replaced
-    0 with NaN, silently dropping any stock on a pure uptrend from scoring.
-    """
     delta = close.diff()
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
@@ -76,50 +75,22 @@ def rsi(close, period=14):
     rsi_val[both_zero] = 50.0
     return rsi_val
 
-
-def flatten_columns(df):
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    return df
-
-
-def with_retries(fn, *args, **kwargs):
-    """Retry wrapper for flaky Yahoo Finance calls, with exponential backoff."""
-    delay = RETRY_DELAY
-    last_err = None
-    for attempt in range(1, RETRIES + 1):
-        try:
-            return fn(*args, **kwargs)
-        except Exception as e:
-            last_err = e
-            print(f"  attempt {attempt}/{RETRIES} failed: {e}")
-            if attempt < RETRIES:
-                time.sleep(delay)
-                delay *= 2
-    raise last_err
-
-
 def fetch(ticker):
     try:
-        df = with_retries(
-            yf.download, ticker, period="3y", interval="1d",
-            auto_adjust=True, progress=False, threads=False
-        )
-        df = flatten_columns(df)
+        # ใช้ yf.Ticker ดึง history โดยตรง ป้องกันปัญหาสับสน Column MultiIndex
+        t = yf.Ticker(ticker)
+        df = t.history(period="3y", interval="1d", auto_adjust=True)
+        
         if df is None or df.empty or len(df) < 260:
             print(f"{ticker}: insufficient price history, skipping")
             return None
 
-        # Sanity check: most recent bar should not be stale (e.g. > 5 calendar
-        # days old), which can happen if Yahoo returns a delayed/short dataset.
-        last_bar_date = df.index[-1]
-        if hasattr(last_bar_date, "to_pydatetime"):
-            age_days = (datetime.now(timezone.utc) - last_bar_date.to_pydatetime().replace(tzinfo=timezone.utc)).days
-            if age_days > 5:
-                print(f"{ticker}: latest bar is {age_days} days old, data may be stale")
+        # บังคับดึง Series แบบ 1D แน่นอน
+        close = df["Close"].squeeze().dropna()
+        volume = df["Volume"].squeeze().fillna(0)
 
-        close = df["Close"].astype(float)
-        volume = df["Volume"].astype(float)
+        if len(close) < 260:
+            return None
 
         ma20 = close.rolling(20).mean()
         ma50 = close.rolling(50).mean()
@@ -128,25 +99,23 @@ def fetch(ticker):
         vol20 = volume.rolling(20).mean()
         r = rsi(close)
 
-        # MACD
         ema12 = close.ewm(span=12, adjust=False).mean()
         ema26 = close.ewm(span=26, adjust=False).mean()
         macd = ema12 - ema26
         signal = macd.ewm(span=9, adjust=False).mean()
 
-        # Approximate fundamentals, when Yahoo provides them.
-        # NOTE: yfinance's `.info` fields (trailingPE, earningsGrowth,
-        # revenueGrowth) are known to be inconsistent or missing, especially
-        # outside US large caps. Treated as optional signal, never required.
         info = {}
         try:
-            info = with_retries(lambda: yf.Ticker(ticker).info)
+            info = t.info or {}
         except Exception as e:
             print(f"{ticker}: fundamentals unavailable: {e}")
 
-        last = float(close.iloc[-1])
+        last_val = close.iloc[-1]
+        if pd.isna(last_val):
+            return None
+
         return {
-            "price": last,
+            "price": float(last_val),
             "ma20": float(ma20.iloc[-1]),
             "ma50": float(ma50.iloc[-1]),
             "ma200": float(ma200.iloc[-1]),
@@ -167,29 +136,13 @@ def fetch(ticker):
         print(f"{ticker}: data error: {e}")
         return None
 
-
 def score(d):
-    """
-    Score a stock 0-100.
-
-    FIX: previously fundamentals were worth 25 raw points out of a fixed
-    100-point denominator. Since yfinance often lacks eps_growth /
-    revenue_growth / forward_pe, most stocks lost up to 25 points for
-    missing data rather than for being weak candidates, making BUY_SCORE=80
-    nearly unreachable for anything without full fundamentals coverage.
-
-    Now the score is normalized against the maximum number of points that
-    were actually available for THIS stock (technical points always count;
-    fundamental points only count toward the denominator when the
-    underlying data exists), then scaled back to 0-100. This keeps the
-    scale comparable across stocks regardless of data completeness.
-    """
     raw = 0
     max_possible = 0
     reasons = []
     risk_flags = []
 
-    # --- Trend: 25 points, always available ---
+    # Trend: 25 pts
     max_possible += 25
     if d["price"] > d["ma200"]:
         raw += 10
@@ -201,7 +154,7 @@ def score(d):
         raw += 7
         reasons.append("MA20 อยู่เหนือ MA50")
 
-    # --- Momentum: 20 points, always available ---
+    # Momentum: 20 pts
     max_possible += 20
     if 45 <= d["rsi"] <= 65:
         raw += 10
@@ -216,18 +169,18 @@ def score(d):
         raw += 10
         reasons.append("MACD อยู่เหนือ Signal")
 
-    # --- Breakout / volume: 20 points, always available ---
+    # Breakout / volume: 20 pts
     max_possible += 20
     near_high = (d["high52"] - d["price"]) / d["high52"] <= HIGH_NEAR
     if near_high:
         raw += 10
         reasons.append("ราคาอยู่ใกล้ 52W High")
 
-    if d["volume"] > d["vol20"] * 1.2:
+    if d["vol20"] > 0 and d["volume"] > d["vol20"] * 1.2:
         raw += 10
         reasons.append("Volume สูงกว่าค่าเฉลี่ย 20 วัน >20%")
 
-    # --- Fundamentals: up to 25 points, only counted when data exists ---
+    # Fundamentals: up to 25 pts
     if d["eps_growth"] is not None:
         max_possible += 10
         if d["eps_growth"] > 0.10:
@@ -252,16 +205,15 @@ def score(d):
             raw += 5
             reasons.append("Forward P/E ต่ำกว่า Trailing P/E")
 
-    # Risk penalty (informational, not subtracted from score)
     if d["price"] < d["ma200"]:
         risk_flags.append("ราคาอยู่ต่ำกว่า MA200")
     if d["rsi"] > 70:
         risk_flags.append("RSI >70")
-    if d["volume"] < d["vol20"] * 0.6:
+    if d["vol20"] > 0 and d["volume"] < d["vol20"] * 0.6:
         risk_flags.append("Volume ต่ำ")
 
     normalized_score = round((raw / max_possible) * 100) if max_possible else 0
-    fundamentals_missing = max_possible < 65 + 25  # not all fundamental fields present
+    fundamentals_missing = max_possible < 65 + 25
 
     if normalized_score >= BUY_SCORE:
         label = "BUY CANDIDATE"
@@ -275,9 +227,9 @@ def score(d):
 
     return normalized_score, label, reasons, risk_flags
 
-
 def make_message(ticker, d, score_value, label, reasons, risks):
     emoji = "🟢" if label == "BUY CANDIDATE" else ("🟡" if label == "WATCH" else "🔴")
+    vol_ratio = (d['volume']/d['vol20']) if d['vol20'] > 0 else 0
     msg = (
         f"{emoji} {ticker} — {label}\n\n"
         f"คะแนน: {score_value}/100\n"
@@ -287,7 +239,7 @@ def make_message(ticker, d, score_value, label, reasons, risks):
         f"MA200: ${d['ma200']:.2f}\n"
         f"52W High: ${d['high52']:.2f}\n"
         f"RSI: {d['rsi']:.1f}\n"
-        f"Volume/Avg20: {d['volume']/d['vol20']:.2f}x\n\n"
+        f"Volume/Avg20: {vol_ratio:.2f}x\n\n"
         "เหตุผล:\n" + "\n".join("• " + x for x in reasons[:8])
     )
     if risks:
@@ -297,7 +249,6 @@ def make_message(ticker, d, score_value, label, reasons, risks):
         "และไม่ใช่คำแนะนำให้ซื้อขายโดยอัตโนมัติ"
     )
     return msg
-
 
 def main():
     state = load_state()
@@ -314,7 +265,6 @@ def main():
         s, label, reasons, risks = score(d)
         results.append((ticker, s, label, d))
 
-        # Notify only when a stock enters BUY CANDIDATE.
         old = state.get(ticker, {}).get("label")
         if label == "BUY CANDIDATE" and old != "BUY CANDIDATE":
             send_telegram(make_message(ticker, d, s, label, reasons, risks))
@@ -325,7 +275,7 @@ def main():
             "last_price": d["price"],
             "updated": datetime.now(timezone.utc).isoformat()
         }
-        time.sleep(0.3)
+        time.sleep(0.5)
 
     save_state(state)
 
@@ -336,7 +286,6 @@ def main():
 
     if skipped:
         print(f"\nSkipped {len(skipped)} ticker(s) due to data errors: {', '.join(skipped)}")
-
 
 if __name__ == "__main__":
     main()
