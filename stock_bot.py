@@ -17,7 +17,8 @@ WATCHLIST = [
 
 BUY_SCORE = 80
 WATCH_SCORE = 60
-HIGH_NEAR = 0.02
+HIGH_NEAR = 0.02       # 2% จาก 52W High
+LEVEL_NEAR_PCT = 0.015 # 1.5% ถือว่าเข้าใกล้แนวรับ/แนวต้าน
 RSI_LOW = 35
 RSI_HIGH = 65
 
@@ -44,7 +45,6 @@ def load_state():
         return {}
 
 def save_state(state):
-    # กรองค่า NaN หรือ None ก่อนเซฟลง JSON
     clean_state = {}
     for k, v in state.items():
         clean_state[k] = v.copy()
@@ -58,6 +58,7 @@ def save_state(state):
         json.dump(clean_state, f, indent=2, ensure_ascii=False)
 
 def rsi(close, period=14):
+    """Wilder RSI - แก้ไข Edge case เมื่อ avg_loss == 0 ให้ได้ 100 ไม่เป็น NaN"""
     delta = close.diff()
     gain = delta.clip(lower=0)
     loss = -delta.clip(upper=0)
@@ -75,217 +76,220 @@ def rsi(close, period=14):
     rsi_val[both_zero] = 50.0
     return rsi_val
 
+def calculate_pivot_levels(df):
+    """คำนวณ Pivot Points (S1, S2, R1, R2) จากแท่งล่าสุดที่ปิดแล้ว (Previous Day)"""
+    prev_high = float(df["High"].iloc[-2])
+    prev_low = float(df["Low"].iloc[-2])
+    prev_close = float(df["Close"].iloc[-2])
+    
+    pivot = (prev_high + prev_low + prev_close) / 3
+    r1 = (2 * pivot) - prev_low
+    s1 = (2 * pivot) - prev_high
+    r2 = pivot + (prev_high - prev_low)
+    s2 = pivot - (prev_high - prev_low)
+    
+    return {"s1": s1, "s2": s2, "r1": r1, "r2": r2}
+
 def fetch(ticker):
-    try:
-        # ใช้ yf.Ticker ดึง history โดยตรง ป้องกันปัญหาสับสน Column MultiIndex
-        t = yf.Ticker(ticker)
-        df = t.history(period="3y", interval="1d", auto_adjust=True)
-        
-        if df is None or df.empty or len(df) < 260:
-            print(f"{ticker}: insufficient price history, skipping")
-            return None
-
-        # บังคับดึง Series แบบ 1D แน่นอน
-        close = df["Close"].squeeze().dropna()
-        volume = df["Volume"].squeeze().fillna(0)
-
-        if len(close) < 260:
-            return None
-
-        ma20 = close.rolling(20).mean()
-        ma50 = close.rolling(50).mean()
-        ma200 = close.rolling(200).mean()
-        high52 = close.rolling(252).max()
-        vol20 = volume.rolling(20).mean()
-        r = rsi(close)
-
-        ema12 = close.ewm(span=12, adjust=False).mean()
-        ema26 = close.ewm(span=26, adjust=False).mean()
-        macd = ema12 - ema26
-        signal = macd.ewm(span=9, adjust=False).mean()
-
-        info = {}
+    for attempt in range(1, RETRIES + 1):
         try:
-            info = t.info or {}
+            t = yf.Ticker(ticker)
+            df = t.history(period="3y", interval="1d", auto_adjust=True)
+            
+            if df is None or df.empty or len(df) < 260:
+                print(f"{ticker}: ข้อมูลไม่พอ Skipping")
+                return None
+
+            close = df["Close"].squeeze().dropna()
+            volume = df["Volume"].squeeze().fillna(0)
+
+            if len(close) < 260:
+                return None
+
+            ma20 = close.rolling(20).mean()
+            ma50 = close.rolling(50).mean()
+            ma200 = close.rolling(200).mean()
+            high52 = close.rolling(252).max()
+            vol20 = volume.rolling(20).mean()
+            r = rsi(close)
+
+            ema12 = close.ewm(span=12, adjust=False).mean()
+            ema26 = close.ewm(span=26, adjust=False).mean()
+            macd = ema12 - ema26
+            signal = macd.ewm(span=9, adjust=False).mean()
+
+            pivots = calculate_pivot_levels(df)
+
+            info = {}
+            try:
+                info = t.info or {}
+            except Exception:
+                pass
+
+            last_val = close.iloc[-1]
+            prev_val = close.iloc[-2]
+
+            return {
+                "price": float(last_val),
+                "prev_price": float(prev_val),
+                "ma20": float(ma20.iloc[-1]),
+                "ma50": float(ma50.iloc[-1]),
+                "ma200": float(ma200.iloc[-1]),
+                "high52": float(high52.iloc[-1]),
+                "rsi": float(r.iloc[-1]),
+                "volume": float(volume.iloc[-1]),
+                "vol20": float(vol20.iloc[-1]),
+                "macd": float(macd.iloc[-1]),
+                "macd_signal": float(signal.iloc[-1]),
+                "pivots": pivots,
+                "pe": info.get("trailingPE"),
+                "forward_pe": info.get("forwardPE"),
+                "eps_growth": info.get("earningsGrowth"),
+                "revenue_growth": info.get("revenueGrowth"),
+            }
         except Exception as e:
-            print(f"{ticker}: fundamentals unavailable: {e}")
-
-        last_val = close.iloc[-1]
-        if pd.isna(last_val):
-            return None
-
-        return {
-            "price": float(last_val),
-            "ma20": float(ma20.iloc[-1]),
-            "ma50": float(ma50.iloc[-1]),
-            "ma200": float(ma200.iloc[-1]),
-            "high52": float(high52.iloc[-1]),
-            "rsi": float(r.iloc[-1]),
-            "volume": float(volume.iloc[-1]),
-            "vol20": float(vol20.iloc[-1]),
-            "macd": float(macd.iloc[-1]),
-            "macd_signal": float(signal.iloc[-1]),
-            "prev_close": float(close.iloc[-2]),
-            "prev_high52": float(high52.iloc[-2]),
-            "pe": info.get("trailingPE"),
-            "forward_pe": info.get("forwardPE"),
-            "eps_growth": info.get("earningsGrowth"),
-            "revenue_growth": info.get("revenueGrowth"),
-        }
-    except Exception as e:
-        print(f"{ticker}: data error: {e}")
-        return None
+            print(f"{ticker}: Attempt {attempt} failed: {e}")
+            if attempt < RETRIES:
+                time.sleep(RETRY_DELAY * attempt)
+    return None
 
 def score(d):
     raw = 0
     max_possible = 0
-    reasons = []
-    risk_flags = []
+    reasons, risk_flags = [], []
 
-    # Trend: 25 pts
+    # Trend (25)
     max_possible += 25
-    if d["price"] > d["ma200"]:
-        raw += 10
-        reasons.append("ราคาอยู่เหนือ MA200")
-    if d["ma50"] > d["ma200"]:
-        raw += 8
-        reasons.append("MA50 อยู่เหนือ MA200")
-    if d["ma20"] > d["ma50"]:
-        raw += 7
-        reasons.append("MA20 อยู่เหนือ MA50")
+    if d["price"] > d["ma200"]: raw += 10; reasons.append("ราคาอยู่เหนือ MA200")
+    if d["ma50"] > d["ma200"]: raw += 8; reasons.append("MA50 อยู่เหนือ MA200")
+    if d["ma20"] > d["ma50"]: raw += 7; reasons.append("MA20 อยู่เหนือ MA50")
 
-    # Momentum: 20 pts
+    # Momentum (20)
     max_possible += 20
-    if 45 <= d["rsi"] <= 65:
-        raw += 10
-        reasons.append(f"RSI {d['rsi']:.1f} อยู่ในโซนโมเมนตัม")
-    elif d["rsi"] < RSI_LOW:
-        raw += 5
-        reasons.append(f"RSI {d['rsi']:.1f} ต่ำ มีโอกาสรีบาวด์แต่เสี่ยง")
-    elif d["rsi"] > RSI_HIGH:
-        risk_flags.append(f"RSI {d['rsi']:.1f} สูง ระวังแรงขาย")
+    if 45 <= d["rsi"] <= 65: raw += 10; reasons.append(f"RSI {d['rsi']:.1f} อยู่ในโซนโมเมนตัม")
+    elif d["rsi"] < RSI_LOW: raw += 5
+    elif d["rsi"] > RSI_HIGH: risk_flags.append(f"RSI {d['rsi']:.1f} สูง ระวังแรงขาย")
 
-    if d["macd"] > d["macd_signal"]:
-        raw += 10
-        reasons.append("MACD อยู่เหนือ Signal")
+    if d["macd"] > d["macd_signal"]: raw += 10; reasons.append("MACD อยู่เหนือ Signal")
 
-    # Breakout / volume: 20 pts
+    # Breakout/Volume (20)
     max_possible += 20
-    near_high = (d["high52"] - d["price"]) / d["high52"] <= HIGH_NEAR
-    if near_high:
-        raw += 10
-        reasons.append("ราคาอยู่ใกล้ 52W High")
+    if (d["high52"] - d["price"]) / d["high52"] <= HIGH_NEAR: raw += 10
+    if d["vol20"] > 0 and d["volume"] > d["vol20"] * 1.2: raw += 10; reasons.append("Volume สูงกว่าค่าเฉลี่ย >20%")
 
-    if d["vol20"] > 0 and d["volume"] > d["vol20"] * 1.2:
-        raw += 10
-        reasons.append("Volume สูงกว่าค่าเฉลี่ย 20 วัน >20%")
-
-    # Fundamentals: up to 25 pts
+    # Fundamentals ( dynamic Max points)
     if d["eps_growth"] is not None:
         max_possible += 10
-        if d["eps_growth"] > 0.10:
-            raw += 10
-            reasons.append("EPS Growth >10%")
-        elif d["eps_growth"] > 0:
-            raw += 5
-            reasons.append("EPS Growth เป็นบวก")
+        if d["eps_growth"] > 0.10: raw += 10
+        elif d["eps_growth"] > 0: raw += 5
 
     if d["revenue_growth"] is not None:
         max_possible += 10
-        if d["revenue_growth"] > 0.10:
-            raw += 10
-            reasons.append("Revenue Growth >10%")
-        elif d["revenue_growth"] > 0:
-            raw += 5
-            reasons.append("Revenue Growth เป็นบวก")
+        if d["revenue_growth"] > 0.10: raw += 10
+        elif d["revenue_growth"] > 0: raw += 5
 
     if d["forward_pe"] is not None and d["pe"] is not None:
         max_possible += 5
-        if d["forward_pe"] < d["pe"]:
-            raw += 5
-            reasons.append("Forward P/E ต่ำกว่า Trailing P/E")
-
-    if d["price"] < d["ma200"]:
-        risk_flags.append("ราคาอยู่ต่ำกว่า MA200")
-    if d["rsi"] > 70:
-        risk_flags.append("RSI >70")
-    if d["vol20"] > 0 and d["volume"] < d["vol20"] * 0.6:
-        risk_flags.append("Volume ต่ำ")
+        if d["forward_pe"] < d["pe"]: raw += 5
 
     normalized_score = round((raw / max_possible) * 100) if max_possible else 0
-    fundamentals_missing = max_possible < 65 + 25
-
-    if normalized_score >= BUY_SCORE:
-        label = "BUY CANDIDATE"
-    elif normalized_score >= WATCH_SCORE:
-        label = "WATCH"
-    else:
-        label = "AVOID / WAIT"
-
-    if fundamentals_missing:
-        risk_flags.append("ข้อมูล fundamentals ไม่ครบ คะแนนคิดจาก technical เป็นหลัก")
+    label = "BUY CANDIDATE" if normalized_score >= BUY_SCORE else ("WATCH" if normalized_score >= WATCH_SCORE else "AVOID / WAIT")
 
     return normalized_score, label, reasons, risk_flags
 
-def make_message(ticker, d, score_value, label, reasons, risks):
+def detect_events(d, label, last_state):
+    """วิเคราะห์การเกิด Event ใหม่แบบยืดหยุ่นเพื่อไม่ให้ส่งแจ้งเตือนซ้ำ"""
+    events = []
+    price = d["price"]
+    prev_price = d["prev_price"]
+    pivots = d["pivots"]
+    s1, r1 = pivots["s1"], pivots["r1"]
+    
+    last_event = last_state.get("last_event")
+
+    # 1. Breakout / Breakdown
+    if prev_price <= r1 and price > r1:
+        events.append(("BREAKOUT", f"ผ่านแนวต้าน R1 ${r1:.2f}"))
+    elif prev_price >= s1 and price < s1:
+        events.append(("BREAKDOWN", f"หลุดแนวรับ S1 ${s1:.2f}"))
+
+    # 2. Near Support / Resistance
+    dist_s1 = abs(price - s1) / price
+    dist_r1 = abs(price - r1) / price
+    
+    if dist_s1 <= LEVEL_NEAR_PCT:
+        events.append(("NEAR_SUPPORT", f"เข้าใกล้แนวรับ S1 (${s1:.2f})"))
+    elif dist_r1 <= LEVEL_NEAR_PCT:
+        events.append(("NEAR_RESISTANCE", f"เข้าใกล้แนวต้าน R1 (${r1:.2f})"))
+
+    # 3. New Buy Signal
+    old_label = last_state.get("label")
+    if label == "BUY CANDIDATE" and old_label != "BUY CANDIDATE":
+        events.append(("NEW_BUY_SIGNAL", "ปรับสถานะเป็น BUY CANDIDATE"))
+
+    # กรองเฉพาะ Event ใหม่ที่ไม่ตรงกับครั้งล่าสุด
+    valid_events = [e for e in events if e[0] != last_event]
+    return valid_events[0] if valid_events else (None, None)
+
+def make_v2_message(ticker, d, score_val, label, event_type, event_desc):
     emoji = "🟢" if label == "BUY CANDIDATE" else ("🟡" if label == "WATCH" else "🔴")
-    vol_ratio = (d['volume']/d['vol20']) if d['vol20'] > 0 else 0
-    msg = (
-        f"{emoji} {ticker} — {label}\n\n"
-        f"คะแนน: {score_value}/100\n"
-        f"ราคา: ${d['price']:.2f}\n"
-        f"MA20: ${d['ma20']:.2f}\n"
-        f"MA50: ${d['ma50']:.2f}\n"
-        f"MA200: ${d['ma200']:.2f}\n"
-        f"52W High: ${d['high52']:.2f}\n"
-        f"RSI: {d['rsi']:.1f}\n"
-        f"Volume/Avg20: {vol_ratio:.2f}x\n\n"
-        "เหตุผล:\n" + "\n".join("• " + x for x in reasons[:8])
-    )
-    if risks:
-        msg += "\n\n⚠️ ความเสี่ยง:\n" + "\n".join("• " + x for x in risks[:5])
+    p = d["pivots"]
+    macd_str = "Bullish 📈" if d["macd"] > d["macd_signal"] else "Bearish 📉"
+    vol_ratio = (d['volume'] / d['vol20']) if d['vol20'] > 0 else 0
+
+    msg = f"📢 STOCK ALERT\n{event_type}\n\n"
+    if event_desc:
+        msg += f"📍 {event_desc}\n\n"
+
     msg += (
-        "\n\n⚠️ สัญญาณจากระบบ ไม่ใช่การรับประกันกำไร "
-        "และไม่ใช่คำแนะนำให้ซื้อขายโดยอัตโนมัติ"
+        f"{emoji} {ticker} — {label}\n\n"
+        f"⭐ Score: {score_val}/100\n"
+        f"💰 ราคา: ${d['price']:.2f}\n\n"
+        f"🟢 แนวรับ\n"
+        f"• S1: ${p['s1']:.2f}\n"
+        f"• S2: ${p['s2']:.2f}\n"
+        f"• MA200: ${d['ma200']:.2f}\n\n"
+        f"🔴 แนวต้าน\n"
+        f"• R1: ${p['r1']:.2f}\n"
+        f"• R2: ${p['r2']:.2f}\n"
+        f"• 52W High: ${d['high52']:.2f}\n\n"
+        f"📊 RSI: {d['rsi']:.1f}\n"
+        f"📈 MACD: {macd_str}\n"
+        f"📦 Volume/Avg20: {vol_ratio:.2f}x"
     )
     return msg
 
 def main():
     state = load_state()
-    results = []
-    skipped = []
+    print(f"Checking {len(WATCHLIST)} stocks (V2)...")
 
-    print(f"Checking {len(WATCHLIST)} stocks...")
     for ticker in WATCHLIST:
         d = fetch(ticker)
         if not d:
-            skipped.append(ticker)
             continue
 
         s, label, reasons, risks = score(d)
-        results.append((ticker, s, label, d))
+        last_ticker_state = state.get(ticker, {})
 
-        old = state.get(ticker, {}).get("label")
-        if label == "BUY CANDIDATE" and old != "BUY CANDIDATE":
-            send_telegram(make_message(ticker, d, s, label, reasons, risks))
+        # ตรวจจับ Event
+        event_type, event_desc = detect_events(d, label, last_ticker_state)
 
-        state[ticker] = {
+        if event_type:
+            msg = make_v2_message(ticker, d, s, label, event_type, event_desc)
+            send_telegram(msg)
+            last_ticker_state["last_event"] = event_type
+            time.sleep(0.5)
+
+        last_ticker_state.update({
             "label": label,
             "score": s,
             "last_price": d["price"],
             "updated": datetime.now(timezone.utc).isoformat()
-        }
-        time.sleep(0.5)
+        })
+        state[ticker] = last_ticker_state
 
     save_state(state)
-
-    results.sort(key=lambda x: x[1], reverse=True)
-    print("\n=== TOP SIGNALS ===")
-    for ticker, s, label, d in results[:10]:
-        print(f"{ticker:5} {s:3}/100  {label:15} ${d['price']:.2f}")
-
-    if skipped:
-        print(f"\nSkipped {len(skipped)} ticker(s) due to data errors: {', '.join(skipped)}")
+    print("Execution completed.")
 
 if __name__ == "__main__":
     main()
