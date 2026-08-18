@@ -3,7 +3,7 @@ name: Stock Signal Bot
 on:
   workflow_dispatch:
   schedule:
-    # รันทุกๆ 2 ชั่วโมง ทุกวัน
+    # รันทุก 2 ชั่วโมง
     - cron: "0 */2 * * *"
 
 jobs:
@@ -30,6 +30,41 @@ jobs:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python stock_bot.py
+
+      # ส่งข้อความเมื่อ Python รันสำเร็จ
+      - name: Send success message
+        if: success()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MESSAGE="🤖 Stock Signal Bot
+
+          ✅ รันโค้ดสำเร็จแล้ว
+          🕐 เวลา: $(date '+%Y-%m-%d %H:%M:%S UTC')
+          📊 ตรวจสอบหุ้นเรียบร้อยแล้ว
+          🚀 GitHub Actions ทำงานปกติ"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}"
+
+      # ถ้าเกิด Error ให้ส่งแจ้งเตือนด้วย
+      - name: Send failure message
+        if: failure()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MESSAGE="🚨 Stock Signal Bot
+
+          ❌ รันโค้ดไม่สำเร็จ
+          🕐 เวลา: $(date '+%Y-%m-%d %H:%M:%S UTC')
+          ⚠️ กรุณาตรวจสอบ GitHub Actions"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}"
 
       - name: Save alert state
         run: |
