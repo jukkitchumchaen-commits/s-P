@@ -3,162 +3,162 @@
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:33.349931+00:00"
+    "updated": "2026-08-18T12:44:57.351350+00:00"
   },
   "AAPL": {
     "label": "AVOID / WAIT",
     "score": 28,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:34.388481+00:00"
+    "updated": "2026-08-18T12:44:58.180366+00:00"
   },
   "MSFT": {
     "label": "AVOID / WAIT",
     "score": 39,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:35.456059+00:00"
+    "updated": "2026-08-18T12:44:59.079678+00:00"
   },
   "GOOGL": {
     "label": "AVOID / WAIT",
     "score": 33,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:36.551785+00:00"
+    "updated": "2026-08-18T12:45:00.113525+00:00"
   },
   "META": {
     "label": "AVOID / WAIT",
     "score": 39,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:37.576055+00:00"
+    "updated": "2026-08-18T12:45:00.923027+00:00"
   },
   "TSLA": {
     "label": "AVOID / WAIT",
     "score": 39,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:38.492057+00:00"
+    "updated": "2026-08-18T12:45:01.755248+00:00"
   },
   "AMD": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:39.430225+00:00"
+    "updated": "2026-08-18T12:45:03.305905+00:00"
   },
   "AVGO": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:40.372193+00:00"
+    "updated": "2026-08-18T12:45:04.139744+00:00"
   },
   "NFLX": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:41.293395+00:00"
+    "updated": "2026-08-18T12:45:04.866140+00:00"
   },
   "LLY": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:42.397055+00:00"
+    "updated": "2026-08-18T12:45:05.783948+00:00"
   },
   "JNJ": {
     "label": "AVOID / WAIT",
     "score": 22,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:43.485696+00:00"
+    "updated": "2026-08-18T12:45:06.765213+00:00"
   },
   "PFE": {
     "label": "AVOID / WAIT",
     "score": 25,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:44.810621+00:00"
+    "updated": "2026-08-18T12:45:07.647715+00:00"
   },
   "ABBV": {
     "label": "AVOID / WAIT",
     "score": 39,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:45.947989+00:00"
+    "updated": "2026-08-18T12:45:09.366824+00:00"
   },
   "BA": {
     "label": "AVOID / WAIT",
     "score": 38,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:46.987380+00:00"
+    "updated": "2026-08-18T12:45:10.344555+00:00"
   },
   "LMT": {
     "label": "AVOID / WAIT",
     "score": 39,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:48.152872+00:00"
+    "updated": "2026-08-18T12:45:11.307497+00:00"
   },
   "RTX": {
     "label": "AVOID / WAIT",
     "score": 28,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:49.219819+00:00"
+    "updated": "2026-08-18T12:45:12.272730+00:00"
   },
   "NOC": {
     "label": "AVOID / WAIT",
     "score": 17,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:50.261086+00:00"
+    "updated": "2026-08-18T12:45:13.080033+00:00"
   },
   "JPM": {
     "label": "AVOID / WAIT",
     "score": 28,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:51.326182+00:00"
+    "updated": "2026-08-18T12:45:13.934628+00:00"
   },
   "V": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:52.261748+00:00"
+    "updated": "2026-08-18T12:45:15.006721+00:00"
   },
   "MA": {
     "label": "AVOID / WAIT",
     "score": 39,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:53.230331+00:00"
+    "updated": "2026-08-18T12:45:15.924059+00:00"
   },
   "PYPL": {
     "label": "AVOID / WAIT",
     "score": 11,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:54.251122+00:00"
+    "updated": "2026-08-18T12:45:16.704702+00:00"
   },
   "WMT": {
     "label": "AVOID / WAIT",
     "score": 44,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:55.396935+00:00"
+    "updated": "2026-08-18T12:45:17.587455+00:00"
   },
   "COST": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:56.335123+00:00"
+    "updated": "2026-08-18T12:45:18.400683+00:00"
   },
   "KO": {
     "label": "AVOID / WAIT",
     "score": 33,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:57.404780+00:00"
+    "updated": "2026-08-18T12:45:19.284985+00:00"
   },
   "PEP": {
     "label": "AVOID / WAIT",
     "score": 44,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:58.424239+00:00"
+    "updated": "2026-08-18T12:45:20.261155+00:00"
   },
   "XOM": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:37:59.487860+00:00"
+    "updated": "2026-08-18T12:45:21.172082+00:00"
   },
   "CVX": {
     "label": "AVOID / WAIT",
     "score": 50,
     "last_price": NaN,
-    "updated": "2026-08-18T12:38:00.660895+00:00"
+    "updated": "2026-08-18T12:45:22.053911+00:00"
   }
 }
