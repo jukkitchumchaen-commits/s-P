@@ -3,9 +3,8 @@ name: Stock Signal Bot
 on:
   workflow_dispatch:
   schedule:
-    # 23:30 UTC = 06:30 Thailand (UTC+7), Mon-Fri
-    # Adjust as needed for the market session you want to analyze.
-    - cron: "30 23 * * 1-5"
+    # รันทุกๆ 2 ชั่วโมง ทุกวัน
+    - cron: "0 */2 * * *"
 
 jobs:
   run-bot:
