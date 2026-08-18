@@ -1,18 +1,36 @@
-import os, json, time
+import os
+import json
+import time
 from datetime import datetime, timezone
 import requests
 import yfinance as yf
 import pandas as pd
 import numpy as np
 
+# ==========================================
+# 1. CONFIGURATION & CONSTANTS
+# ==========================================
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 STATE_FILE = "alert_state.json"
 
 WATCHLIST = [
-    "NVDA","AAPL","MSFT","GOOGL","META","TSLA","AMD","AVGO","NFLX",
-    "LLY","JNJ","PFE","ABBV","BA","LMT","RTX","NOC",
-    "JPM","V","MA","PYPL","WMT","COST","KO","PEP","XOM","CVX"
+    # --- Watchlist เดิม (27 ตัว) ---
+    "NVDA", "AAPL", "MSFT", "GOOGL", "META", "TSLA", "AMD", "AVGO", "NFLX",
+    "LLY", "JNJ", "PFE", "ABBV", "BA", "LMT", "RTX", "NOC",
+    "JPM", "V", "MA", "PYPL", "WMT", "COST", "KO", "PEP", "XOM", "CVX",
+
+    # --- Semiconductor & Hardware (8 ตัว) ---
+    "TSM", "ASML", "MU", "QCOM", "AMAT", "LRCX", "ARM", "SMCI",
+
+    # --- Cloud, SaaS & AI Software (8 ตัว) ---
+    "PLTR", "AMZN", "ORCL", "CRM", "NOW", "SNOW", "ADBE", "MDB",
+
+    # --- Cybersecurity (3 ตัว) ---
+    "PANW", "CRWD", "FTNT",
+
+    # --- Fintech, AdTech & Platforms (4 ตัว) ---
+    "SQ", "SHOP", "TTD", "UBER"
 ]
 
 BUY_SCORE = 80
@@ -25,12 +43,24 @@ RSI_HIGH = 65
 RETRIES = 3
 RETRY_DELAY = 2
 
+
+# ==========================================
+# 2. TELEGRAM & STATE MANAGEMENT
+# ==========================================
 def send_telegram(text):
     if not TOKEN or not CHAT_ID:
-        print("Telegram credentials are missing.")
+        print("Telegram credentials are missing. Skipping send.")
+        print("--- MSG PREVIEW ---")
+        print(text)
+        print("-------------------")
         return
+    
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": text}
+    payload = {
+        "chat_id": CHAT_ID,
+        "text": text,
+        "parse_mode": "HTML"
+    }
     try:
         r = requests.post(url, json=payload, timeout=15)
         r.raise_for_status()
@@ -57,6 +87,10 @@ def save_state(state):
     with open(STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(clean_state, f, indent=2, ensure_ascii=False)
 
+
+# ==========================================
+# 3. INDICATORS & CALCULATIONS
+# ==========================================
 def rsi(close, period=14):
     """Wilder RSI - แก้ไข Edge case เมื่อ avg_loss == 0 ให้ได้ 100 ไม่เป็น NaN"""
     delta = close.diff()
@@ -77,7 +111,7 @@ def rsi(close, period=14):
     return rsi_val
 
 def calculate_pivot_levels(df):
-    """คำนวณ Pivot Points (S1, S2, R1, R2) จากแท่งล่าสุดที่ปิดแล้ว (Previous Day)"""
+    """คำนวณ Pivot Points (S1, S2, R1, R2) จากแท่งก่อนหน้า"""
     prev_high = float(df["High"].iloc[-2])
     prev_low = float(df["Low"].iloc[-2])
     prev_close = float(df["Close"].iloc[-2])
@@ -90,6 +124,10 @@ def calculate_pivot_levels(df):
     
     return {"s1": s1, "s2": s2, "r1": r1, "r2": r2}
 
+
+# ==========================================
+# 4. DATA FETCHING (WITH RETRY)
+# ==========================================
 def fetch(ticker):
     for attempt in range(1, RETRIES + 1):
         try:
@@ -97,7 +135,7 @@ def fetch(ticker):
             df = t.history(period="3y", interval="1d", auto_adjust=True)
             
             if df is None or df.empty or len(df) < 260:
-                print(f"{ticker}: ข้อมูลไม่พอ Skipping")
+                print(f"[{ticker}] Data incomplete, skipping.")
                 return None
 
             close = df["Close"].squeeze().dropna()
@@ -148,122 +186,189 @@ def fetch(ticker):
                 "revenue_growth": info.get("revenueGrowth"),
             }
         except Exception as e:
-            print(f"{ticker}: Attempt {attempt} failed: {e}")
+            print(f"[{ticker}] Attempt {attempt} failed: {e}")
             if attempt < RETRIES:
                 time.sleep(RETRY_DELAY * attempt)
     return None
 
+
+# ==========================================
+# 5. DYNAMIC SCORING SYSTEM
+# ==========================================
 def score(d):
     raw = 0
     max_possible = 0
     reasons, risk_flags = [], []
 
-    # Trend (25)
+    # --- Trend Score (Max 25) ---
     max_possible += 25
-    if d["price"] > d["ma200"]: raw += 10; reasons.append("ราคาอยู่เหนือ MA200")
-    if d["ma50"] > d["ma200"]: raw += 8; reasons.append("MA50 อยู่เหนือ MA200")
-    if d["ma20"] > d["ma50"]: raw += 7; reasons.append("MA20 อยู่เหนือ MA50")
+    if d["price"] > d["ma200"]: 
+        raw += 10
+        reasons.append("ราคาอยู่เหนือ MA200")
+    if d["ma50"] > d["ma200"]: 
+        raw += 8
+        reasons.append("MA50 อยู่เหนือ MA200 (Golden Cross)")
+    if d["ma20"] > d["ma50"]: 
+        raw += 7
+        reasons.append("MA20 อยู่เหนือ MA50")
 
-    # Momentum (20)
+    # --- Momentum Score (Max 20) ---
     max_possible += 20
-    if 45 <= d["rsi"] <= 65: raw += 10; reasons.append(f"RSI {d['rsi']:.1f} อยู่ในโซนโมเมนตัม")
-    elif d["rsi"] < RSI_LOW: raw += 5
-    elif d["rsi"] > RSI_HIGH: risk_flags.append(f"RSI {d['rsi']:.1f} สูง ระวังแรงขาย")
+    if 45 <= d["rsi"] <= 65: 
+        raw += 10
+        reasons.append(f"RSI {d['rsi']:.1f} อยู่ในโซน Bullish Momentum")
+    elif d["rsi"] < RSI_LOW: 
+        raw += 5
+        reasons.append(f"RSI {d['rsi']:.1f} โซน Oversold")
+    elif d["rsi"] > RSI_HIGH: 
+        risk_flags.append(f"RSI {d['rsi']:.1f} เริ่มเข้าเขต Overbought")
 
-    if d["macd"] > d["macd_signal"]: raw += 10; reasons.append("MACD อยู่เหนือ Signal")
+    if d["macd"] > d["macd_signal"]: 
+        raw += 10
+        reasons.append("MACD > Signal Line")
 
-    # Breakout/Volume (20)
+    # --- Breakout & Volume Score (Max 20) ---
     max_possible += 20
-    if (d["high52"] - d["price"]) / d["high52"] <= HIGH_NEAR: raw += 10
-    if d["vol20"] > 0 and d["volume"] > d["vol20"] * 1.2: raw += 10; reasons.append("Volume สูงกว่าค่าเฉลี่ย >20%")
+    if (d["high52"] - d["price"]) / d["high52"] <= HIGH_NEAR: 
+        raw += 10
+        reasons.append("ราคาใกล้จุดสูงสุดในรอบ 52 สัปดาห์")
+    if d["vol20"] > 0 and d["volume"] > d["vol20"] * 1.2: 
+        raw += 10
+        reasons.append("Volume สูงกว่าค่าเฉลี่ย 20 วัน >20%")
 
-    # Fundamentals ( dynamic Max points)
+    # --- Dynamic Fundamental Scoring (คิดคะแนนเฉพาะตัวที่มีข้อมูล) ---
     if d["eps_growth"] is not None:
         max_possible += 10
-        if d["eps_growth"] > 0.10: raw += 10
-        elif d["eps_growth"] > 0: raw += 5
+        if d["eps_growth"] > 0.10: 
+            raw += 10
+            reasons.append(f"EPS Growth เด่น ({d['eps_growth']*100:.1f}%)")
+        elif d["eps_growth"] > 0: 
+            raw += 5
 
     if d["revenue_growth"] is not None:
         max_possible += 10
-        if d["revenue_growth"] > 0.10: raw += 10
-        elif d["revenue_growth"] > 0: raw += 5
+        if d["revenue_growth"] > 0.10: 
+            raw += 10
+            reasons.append(f"Revenue Growth เด่น ({d['revenue_growth']*100:.1f}%)")
+        elif d["revenue_growth"] > 0: 
+            raw += 5
 
     if d["forward_pe"] is not None and d["pe"] is not None:
         max_possible += 5
-        if d["forward_pe"] < d["pe"]: raw += 5
+        if d["forward_pe"] < d["pe"]: 
+            raw += 5
+            reasons.append("Forward P/E ถูกกว่า Trailing P/E")
 
-    normalized_score = round((raw / max_possible) * 100) if max_possible else 0
-    label = "BUY CANDIDATE" if normalized_score >= BUY_SCORE else ("WATCH" if normalized_score >= WATCH_SCORE else "AVOID / WAIT")
+    # Calculate normalized percentage score
+    normalized_score = round((raw / max_possible) * 100) if max_possible > 0 else 0
+    
+    if normalized_score >= BUY_SCORE:
+        label = "BUY CANDIDATE"
+    elif normalized_score >= WATCH_SCORE:
+        label = "WATCH"
+    else:
+        label = "AVOID / WAIT"
 
     return normalized_score, label, reasons, risk_flags
 
+
+# ==========================================
+# 6. EVENT DETECTION LOGIC
+# ==========================================
 def detect_events(d, label, last_state):
-    """วิเคราะห์การเกิด Event ใหม่แบบยืดหยุ่นเพื่อไม่ให้ส่งแจ้งเตือนซ้ำ"""
-    events = []
+    """
+    ตรวจจับ Event ตามลำดับความสำคัญ (Priority):
+    1. BREAKOUT / BREAKDOWN (สำคัญที่สุด)
+    2. NEAR_SUPPORT / NEAR_RESISTANCE
+    3. NEW_BUY_SIGNAL
+    """
     price = d["price"]
     prev_price = d["prev_price"]
     pivots = d["pivots"]
     s1, r1 = pivots["s1"], pivots["r1"]
     
     last_event = last_state.get("last_event")
+    event_type = None
+    event_desc = None
 
-    # 1. Breakout / Breakdown
+    # Priority 1: Breakout & Breakdown
     if prev_price <= r1 and price > r1:
-        events.append(("BREAKOUT", f"ผ่านแนวต้าน R1 ${r1:.2f}"))
+        event_type = "BREAKOUT"
+        event_desc = f"ผ่านแนวต้าน R1 ${r1:.2f}"
     elif prev_price >= s1 and price < s1:
-        events.append(("BREAKDOWN", f"หลุดแนวรับ S1 ${s1:.2f}"))
+        event_type = "BREAKDOWN"
+        event_desc = f"หลุดแนวรับ S1 ${s1:.2f}"
 
-    # 2. Near Support / Resistance
-    dist_s1 = abs(price - s1) / price
-    dist_r1 = abs(price - r1) / price
-    
-    if dist_s1 <= LEVEL_NEAR_PCT:
-        events.append(("NEAR_SUPPORT", f"เข้าใกล้แนวรับ S1 (${s1:.2f})"))
-    elif dist_r1 <= LEVEL_NEAR_PCT:
-        events.append(("NEAR_RESISTANCE", f"เข้าใกล้แนวต้าน R1 (${r1:.2f})"))
+    # Priority 2: Near Support & Resistance (ทำต่อเมื่อไม่มี Breakout/Breakdown)
+    if not event_type:
+        dist_s1 = abs(price - s1) / price
+        dist_r1 = abs(price - r1) / price
+        
+        if dist_s1 <= LEVEL_NEAR_PCT:
+            event_type = "NEAR_SUPPORT"
+            event_desc = f"เข้าใกล้แนวรับ S1 (${s1:.2f})"
+        elif dist_r1 <= LEVEL_NEAR_PCT:
+            event_type = "NEAR_RESISTANCE"
+            event_desc = f"เข้าใกล้แนวต้าน R1 (${r1:.2f})"
 
-    # 3. New Buy Signal
-    old_label = last_state.get("label")
-    if label == "BUY CANDIDATE" and old_label != "BUY CANDIDATE":
-        events.append(("NEW_BUY_SIGNAL", "ปรับสถานะเป็น BUY CANDIDATE"))
+    # Priority 3: Status Upgraded to BUY CANDIDATE
+    if not event_type:
+        old_label = last_state.get("label")
+        if label == "BUY CANDIDATE" and old_label != "BUY CANDIDATE":
+            event_type = "BUY_CANDIDATE"
+            event_desc = "สถานะอัปเกรดเป็น BUY CANDIDATE"
 
-    # กรองเฉพาะ Event ใหม่ที่ไม่ตรงกับครั้งล่าสุด
-    valid_events = [e for e in events if e[0] != last_event]
-    return valid_events[0] if valid_events else (None, None)
+    # ป้องกันการส่งซ้ำ: ถ้าเป็น Event เดียวกับครั้งก่อน จะไม่ส่ง
+    if event_type and event_type != last_event:
+        return event_type, event_desc
 
+    return None, None
+
+
+# ==========================================
+# 7. TELEGRAM MESSAGE FORMATTER
+# ==========================================
 def make_v2_message(ticker, d, score_val, label, event_type, event_desc):
     emoji = "🟢" if label == "BUY CANDIDATE" else ("🟡" if label == "WATCH" else "🔴")
     p = d["pivots"]
     macd_str = "Bullish 📈" if d["macd"] > d["macd_signal"] else "Bearish 📉"
-    vol_ratio = (d['volume'] / d['vol20']) if d['vol20'] > 0 else 0
+    vol_ratio = (d['volume'] / d['vol20']) if d['vol20'] > 0 else 0.0
 
-    msg = f"📢 STOCK ALERT\n{event_type}\n\n"
+    # Header section
+    msg = f"📢 <b>STOCK ALERT</b>\n<b>{event_type}</b>\n\n"
     if event_desc:
         msg += f"📍 {event_desc}\n\n"
 
+    # Body section
     msg += (
-        f"{emoji} {ticker} — {label}\n\n"
-        f"⭐ Score: {score_val}/100\n"
-        f"💰 ราคา: ${d['price']:.2f}\n\n"
-        f"🟢 แนวรับ\n"
+        f"{emoji} <b>{ticker}</b> — <b>{label}</b>\n\n"
+        f"⭐ <b>Score:</b> {score_val}/100\n"
+        f"💰 <b>ราคา:</b> ${d['price']:.2f}\n\n"
+        f"🟢 <b>แนวรับ</b>\n"
         f"• S1: ${p['s1']:.2f}\n"
         f"• S2: ${p['s2']:.2f}\n"
         f"• MA200: ${d['ma200']:.2f}\n\n"
-        f"🔴 แนวต้าน\n"
+        f"🔴 <b>แนวต้าน</b>\n"
         f"• R1: ${p['r1']:.2f}\n"
         f"• R2: ${p['r2']:.2f}\n"
         f"• 52W High: ${d['high52']:.2f}\n\n"
-        f"📊 RSI: {d['rsi']:.1f}\n"
-        f"📈 MACD: {macd_str}\n"
-        f"📦 Volume/Avg20: {vol_ratio:.2f}x"
+        f"📊 <b>RSI:</b> {d['rsi']:.1f}\n"
+        f"📈 <b>MACD:</b> {macd_str}\n"
+        f"📦 <b>Volume/Avg20:</b> {vol_ratio:.2f}x"
     )
     return msg
 
+
+# ==========================================
+# 8. MAIN EXECUTION LOOP
+# ==========================================
 def main():
     state = load_state()
-    print(f"Checking {len(WATCHLIST)} stocks (V2)...")
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Starting checks for {len(WATCHLIST)} stocks...")
 
-    for ticker in WATCHLIST:
+    alert_count = 0
+    for idx, ticker in enumerate(WATCHLIST, 1):
+        print(f"[{idx}/{len(WATCHLIST)}] Checking {ticker}...", end="\r")
         d = fetch(ticker)
         if not d:
             continue
@@ -271,15 +376,17 @@ def main():
         s, label, reasons, risks = score(d)
         last_ticker_state = state.get(ticker, {})
 
-        # ตรวจจับ Event
+        # Check for Events
         event_type, event_desc = detect_events(d, label, last_ticker_state)
 
         if event_type:
             msg = make_v2_message(ticker, d, s, label, event_type, event_desc)
             send_telegram(msg)
             last_ticker_state["last_event"] = event_type
-            time.sleep(0.5)
+            alert_count += 1
+            time.sleep(1)  # Rate limiting delay for Telegram API
 
+        # Update persistent state
         last_ticker_state.update({
             "label": label,
             "score": s,
@@ -289,7 +396,7 @@ def main():
         state[ticker] = last_ticker_state
 
     save_state(state)
-    print("Execution completed.")
+    print(f"\nExecution completed. Sent {alert_count} alerts.")
 
 if __name__ == "__main__":
     main()
