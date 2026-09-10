@@ -2,344 +2,344 @@
   "NVDA": {
     "label": "WATCH",
     "score": 67,
-    "last_price": 218.6300048828125,
-    "updated": "2026-09-10T16:53:36.712852+00:00",
+    "last_price": 218.3300018310547,
+    "updated": "2026-09-10T19:27:29.093381+00:00",
     "last_event": "BREAKDOWN"
   },
   "AAPL": {
-    "label": "WATCH",
-    "score": 70,
-    "last_price": 323.69000244140625,
-    "updated": "2026-09-10T16:53:38.623244+00:00",
+    "label": "BUY CANDIDATE",
+    "score": 81,
+    "last_price": 325.3999938964844,
+    "updated": "2026-09-10T19:27:29.623429+00:00",
     "last_event": "BREAKOUT"
   },
   "MSFT": {
     "label": "WATCH",
     "score": 67,
-    "last_price": 493.5,
-    "updated": "2026-09-10T16:53:38.895667+00:00",
+    "last_price": 490.447509765625,
+    "updated": "2026-09-10T19:27:30.299971+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "GOOGL": {
     "label": "AVOID / WAIT",
     "score": 31,
-    "last_price": 331.5150146484375,
-    "updated": "2026-09-10T16:53:40.802457+00:00",
+    "last_price": 332.25,
+    "updated": "2026-09-10T19:27:30.840163+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "META": {
     "label": "AVOID / WAIT",
     "score": 39,
-    "last_price": 651.6519775390625,
-    "updated": "2026-09-10T16:53:42.656185+00:00",
+    "last_price": 643.7750244140625,
+    "updated": "2026-09-10T19:27:31.396075+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "TSLA": {
     "label": "AVOID / WAIT",
     "score": 39,
-    "last_price": 366.0400085449219,
-    "updated": "2026-09-10T16:53:44.670048+00:00",
+    "last_price": 364.0813903808594,
+    "updated": "2026-09-10T19:27:31.876157+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "AMD": {
     "label": "WATCH",
     "score": 70,
-    "last_price": 505.9523010253906,
-    "updated": "2026-09-10T16:53:46.505964+00:00",
+    "last_price": 505.70001220703125,
+    "updated": "2026-09-10T19:27:32.437406+00:00",
     "last_event": "BREAKDOWN"
   },
   "AVGO": {
     "label": "AVOID / WAIT",
-    "score": 48,
-    "last_price": 363.6000061035156,
-    "updated": "2026-09-10T16:53:46.727499+00:00",
+    "score": 37,
+    "last_price": 361.91009521484375,
+    "updated": "2026-09-10T19:27:32.957867+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "NFLX": {
     "label": "AVOID / WAIT",
     "score": 36,
-    "last_price": 76.13999938964844,
-    "updated": "2026-09-10T16:53:46.918666+00:00",
+    "last_price": 75.79499816894531,
+    "updated": "2026-09-10T19:27:33.423050+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "LLY": {
     "label": "AVOID / WAIT",
     "score": 56,
-    "last_price": 1126.6099853515625,
-    "updated": "2026-09-10T16:53:47.206297+00:00",
+    "last_price": 1124.2298583984375,
+    "updated": "2026-09-10T19:27:34.049711+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "JNJ": {
     "label": "AVOID / WAIT",
     "score": 50,
-    "last_price": 266.17498779296875,
-    "updated": "2026-09-10T16:53:47.519850+00:00",
+    "last_price": 266.5199890136719,
+    "updated": "2026-09-10T19:27:34.661279+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "PFE": {
     "label": "AVOID / WAIT",
     "score": 56,
-    "last_price": 27.469999313354492,
-    "updated": "2026-09-10T16:53:49.482833+00:00",
+    "last_price": 27.5049991607666,
+    "updated": "2026-09-10T19:27:35.364574+00:00",
     "last_event": "BREAKDOWN"
   },
   "ABBV": {
     "label": "WATCH",
     "score": 67,
-    "last_price": 251.97999572753906,
-    "updated": "2026-09-10T16:53:49.722010+00:00",
-    "last_event": "NEAR_RESISTANCE"
+    "last_price": 253.8699951171875,
+    "updated": "2026-09-10T19:27:37.523166+00:00",
+    "last_event": "BREAKOUT"
   },
   "BA": {
     "label": "AVOID / WAIT",
     "score": 12,
-    "last_price": 206.4300994873047,
-    "updated": "2026-09-10T16:53:51.673513+00:00",
+    "last_price": 204.92999267578125,
+    "updated": "2026-09-10T19:27:38.182182+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "LMT": {
     "label": "AVOID / WAIT",
     "score": 44,
-    "last_price": 528.27001953125,
-    "updated": "2026-09-10T16:53:52.020552+00:00",
+    "last_price": 527.760009765625,
+    "updated": "2026-09-10T19:27:38.834675+00:00",
     "last_event": "BREAKDOWN"
   },
   "RTX": {
     "label": "WATCH",
     "score": 61,
-    "last_price": 197.49000549316406,
-    "updated": "2026-09-10T16:53:52.308263+00:00",
+    "last_price": 197.06500244140625,
+    "updated": "2026-09-10T19:27:39.586190+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "NOC": {
     "label": "AVOID / WAIT",
     "score": 13,
-    "last_price": 520.0,
-    "updated": "2026-09-10T16:53:55.368179+00:00",
-    "last_event": "NEAR_RESISTANCE"
+    "last_price": 519.125,
+    "updated": "2026-09-10T19:27:41.933078+00:00",
+    "last_event": "NEAR_SUPPORT"
   },
   "JPM": {
     "label": "WATCH",
     "score": 67,
-    "last_price": 352.739990234375,
-    "updated": "2026-09-10T16:53:55.656086+00:00",
+    "last_price": 352.3456115722656,
+    "updated": "2026-09-10T19:27:42.598988+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "V": {
     "label": "WATCH",
     "score": 67,
-    "last_price": 367.44000244140625,
-    "updated": "2026-09-10T16:53:55.891223+00:00",
+    "last_price": 366.43499755859375,
+    "updated": "2026-09-10T19:27:43.183395+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "MA": {
     "label": "AVOID / WAIT",
     "score": 56,
-    "last_price": 565.5418090820312,
-    "updated": "2026-09-10T16:53:56.147021+00:00",
-    "last_event": "NEAR_SUPPORT"
+    "last_price": 563.8809814453125,
+    "updated": "2026-09-10T19:27:45.311516+00:00",
+    "last_event": "BREAKDOWN"
   },
   "PYPL": {
     "label": "AVOID / WAIT",
     "score": 39,
-    "last_price": 53.28499984741211,
-    "updated": "2026-09-10T16:53:58.016102+00:00",
+    "last_price": 53.0099983215332,
+    "updated": "2026-09-10T19:27:45.949416+00:00",
     "last_event": "BREAKOUT"
   },
   "WMT": {
     "label": "AVOID / WAIT",
     "score": 22,
-    "last_price": 106.0,
-    "updated": "2026-09-10T16:53:58.335437+00:00",
+    "last_price": 105.68499755859375,
+    "updated": "2026-09-10T19:27:46.557166+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "COST": {
     "label": "AVOID / WAIT",
     "score": 33,
-    "last_price": 903.344970703125,
-    "updated": "2026-09-10T16:54:00.241786+00:00",
+    "last_price": 900.5349731445312,
+    "updated": "2026-09-10T19:27:47.110500+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "KO": {
     "label": "WATCH",
     "score": 61,
-    "last_price": 88.38500213623047,
-    "updated": "2026-09-10T16:54:02.336113+00:00",
-    "last_event": "BREAKOUT"
+    "last_price": 88.1449966430664,
+    "updated": "2026-09-10T19:27:49.353341+00:00",
+    "last_event": "NEAR_SUPPORT"
   },
   "PEP": {
     "label": "AVOID / WAIT",
-    "score": 41,
-    "last_price": 137.14999389648438,
-    "updated": "2026-09-10T16:54:04.316234+00:00",
+    "score": 30,
+    "last_price": 136.97000122070312,
+    "updated": "2026-09-10T19:27:50.093352+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "XOM": {
     "label": "WATCH",
     "score": 67,
-    "last_price": 165.52499389648438,
-    "updated": "2026-09-10T16:54:04.628892+00:00",
-    "last_event": "BREAKOUT"
+    "last_price": 165.36000061035156,
+    "updated": "2026-09-10T19:27:52.261428+00:00",
+    "last_event": "NEAR_RESISTANCE"
   },
   "CVX": {
     "label": "WATCH",
     "score": 78,
-    "last_price": 213.47000122070312,
-    "updated": "2026-09-10T16:54:06.616642+00:00",
+    "last_price": 212.83999633789062,
+    "updated": "2026-09-10T19:27:53.003643+00:00",
     "last_event": "NEAR_SUPPORT"
   },
   "TSM": {
     "last_event": "BREAKDOWN",
     "label": "WATCH",
     "score": 78,
-    "last_price": 430.69000244140625,
-    "updated": "2026-09-10T16:54:08.501442+00:00"
+    "last_price": 429.5249938964844,
+    "updated": "2026-09-10T19:27:53.698462+00:00"
   },
   "ASML": {
     "last_event": "BREAKDOWN",
     "label": "WATCH",
     "score": 67,
-    "last_price": 1700.68994140625,
-    "updated": "2026-09-10T16:54:08.760529+00:00"
+    "last_price": 1700.0400390625,
+    "updated": "2026-09-10T19:27:54.339008+00:00"
   },
   "MU": {
     "last_event": "BREAKDOWN",
     "label": "WATCH",
     "score": 78,
-    "last_price": 979.5,
-    "updated": "2026-09-10T16:54:10.747761+00:00"
+    "last_price": 982.7999877929688,
+    "updated": "2026-09-10T19:27:55.013674+00:00"
   },
   "QCOM": {
-    "last_event": "BREAKOUT",
+    "last_event": "NEAR_RESISTANCE",
     "label": "AVOID / WAIT",
-    "score": 37,
-    "last_price": 181.6300048828125,
-    "updated": "2026-09-10T16:54:11.016105+00:00"
+    "score": 48,
+    "last_price": 178.64500427246094,
+    "updated": "2026-09-10T19:27:57.056164+00:00"
   },
   "AMAT": {
     "label": "AVOID / WAIT",
     "score": 59,
-    "last_price": 457.42498779296875,
-    "updated": "2026-09-10T16:54:12.912318+00:00",
+    "last_price": 456.4800109863281,
+    "updated": "2026-09-10T19:27:57.677353+00:00",
     "last_event": "BREAKDOWN"
   },
   "LRCX": {
     "last_event": "BREAKDOWN",
     "label": "WATCH",
     "score": 70,
-    "last_price": 300.8900146484375,
-    "updated": "2026-09-10T16:54:14.803365+00:00"
+    "last_price": 299.8599853515625,
+    "updated": "2026-09-10T19:27:58.211610+00:00"
   },
   "ARM": {
     "last_event": "BREAKDOWN",
     "label": "WATCH",
     "score": 70,
-    "last_price": 256.0199890136719,
-    "updated": "2026-09-10T16:54:16.847160+00:00"
+    "last_price": 255.5500030517578,
+    "updated": "2026-09-10T19:27:58.877064+00:00"
   },
   "SMCI": {
     "last_event": "BREAKDOWN",
     "label": "WATCH",
     "score": 67,
-    "last_price": 38.22999954223633,
-    "updated": "2026-09-10T16:54:17.062027+00:00"
+    "last_price": 38.01499938964844,
+    "updated": "2026-09-10T19:27:59.457467+00:00"
   },
   "PLTR": {
     "last_event": "BREAKDOWN",
     "label": "WATCH",
     "score": 67,
-    "last_price": 166.89999389648438,
-    "updated": "2026-09-10T16:54:19.629678+00:00"
+    "last_price": 166.0800018310547,
+    "updated": "2026-09-10T19:27:59.991903+00:00"
   },
   "AMZN": {
     "last_event": "NEAR_SUPPORT",
     "label": "AVOID / WAIT",
     "score": 50,
-    "last_price": 252.9499969482422,
-    "updated": "2026-09-10T16:54:21.485054+00:00"
+    "last_price": 251.55999755859375,
+    "updated": "2026-09-10T19:28:00.645768+00:00"
   },
   "ORCL": {
     "last_event": "BREAKDOWN",
-    "label": "AVOID / WAIT",
-    "score": 58,
-    "last_price": 156.6199951171875,
-    "updated": "2026-09-10T16:54:23.361226+00:00"
+    "label": "WATCH",
+    "score": 69,
+    "last_price": 154.32000732421875,
+    "updated": "2026-09-10T19:28:01.181961+00:00"
   },
   "CRM": {
-    "last_event": "BREAKDOWN",
+    "last_event": "NEAR_SUPPORT",
     "label": "AVOID / WAIT",
     "score": 58,
-    "last_price": 244.9600067138672,
-    "updated": "2026-09-10T16:54:23.563709+00:00"
+    "last_price": 242.96499633789062,
+    "updated": "2026-09-10T19:28:03.442382+00:00"
   },
   "NOW": {
-    "last_event": "NEAR_RESISTANCE",
+    "last_event": "NEAR_SUPPORT",
     "label": "AVOID / WAIT",
     "score": 56,
-    "last_price": 132.47999572753906,
-    "updated": "2026-09-10T16:54:25.436819+00:00"
+    "last_price": 131.02000427246094,
+    "updated": "2026-09-10T19:28:05.856531+00:00"
   },
   "SNOW": {
     "label": "WATCH",
     "score": 60,
-    "last_price": 334.3699951171875,
-    "updated": "2026-09-10T16:54:28.406390+00:00",
-    "last_event": "NEAR_RESISTANCE"
+    "last_price": 331.8999938964844,
+    "updated": "2026-09-10T19:28:08.010772+00:00",
+    "last_event": "NEAR_SUPPORT"
   },
   "ADBE": {
     "last_event": "BREAKDOWN",
     "label": "AVOID / WAIT",
-    "score": 30,
-    "last_price": 250.1649932861328,
-    "updated": "2026-09-10T16:54:30.534726+00:00"
+    "score": 41,
+    "last_price": 248.64500427246094,
+    "updated": "2026-09-10T19:28:08.505981+00:00"
   },
   "MDB": {
     "last_event": "BREAKOUT",
     "label": "WATCH",
     "score": 62,
-    "last_price": 377.760009765625,
-    "updated": "2026-09-10T16:54:32.385476+00:00"
+    "last_price": 374.6000061035156,
+    "updated": "2026-09-10T19:28:08.974384+00:00"
   },
   "PANW": {
-    "last_event": "BREAKOUT",
+    "last_event": "NEAR_RESISTANCE",
     "label": "WATCH",
     "score": 62,
-    "last_price": 343.0,
-    "updated": "2026-09-10T16:54:34.447732+00:00"
+    "last_price": 338.0849914550781,
+    "updated": "2026-09-10T19:28:11.063584+00:00"
   },
   "CRWD": {
-    "last_event": "BREAKOUT",
+    "last_event": "NEAR_RESISTANCE",
     "label": "WATCH",
     "score": 62,
-    "last_price": 214.00999450683594,
-    "updated": "2026-09-10T16:54:36.373922+00:00"
+    "last_price": 208.82000732421875,
+    "updated": "2026-09-10T19:28:13.252573+00:00"
   },
   "FTNT": {
     "last_event": "BREAKOUT",
     "label": "AVOID / WAIT",
     "score": 59,
-    "last_price": 160.08999633789062,
-    "updated": "2026-09-10T16:54:38.738150+00:00"
+    "last_price": 158.86000061035156,
+    "updated": "2026-09-10T19:28:13.986970+00:00"
   },
   "SHOP": {
     "last_event": "BREAKDOWN",
     "label": "AVOID / WAIT",
     "score": 44,
-    "last_price": 126.72000122070312,
-    "updated": "2026-09-10T16:54:39.230220+00:00"
+    "last_price": 126.29499816894531,
+    "updated": "2026-09-10T19:28:15.540781+00:00"
   },
   "TTD": {
     "last_event": "NEAR_RESISTANCE",
     "label": "AVOID / WAIT",
     "score": 22,
-    "last_price": 14.010000228881836,
-    "updated": "2026-09-10T16:54:41.089042+00:00"
+    "last_price": 13.940099716186523,
+    "updated": "2026-09-10T19:28:16.238969+00:00"
   },
   "UBER": {
     "last_event": "BREAKOUT",
     "label": "AVOID / WAIT",
-    "score": 30,
-    "last_price": 73.05000305175781,
-    "updated": "2026-09-10T16:54:42.965197+00:00"
+    "score": 41,
+    "last_price": 72.56500244140625,
+    "updated": "2026-09-10T19:28:16.772823+00:00"
   }
 }
